@@ -12,27 +12,28 @@ from auxly.stringy import randomize, between
 import auxly
 import qprompt
 import enchant
+import click
 
 ##==============================================================#
 ## SECTION: Function Definitions                                #
 ##==============================================================#
 
-def process_image_basic(img, tmp_png):
+def process_pic_basic(pic, tmp_png):
     """Use this for basic blue text extraction. Results in some
-    extra stuff depending on the image."""
-    cmd = f"magick convert {img} -resize 80% -fill white -fuzz 30% +opaque blue {tmp_png}"
+    extra stuff depending on the pic."""
+    cmd = f"magick convert {pic} -resize 80% -fill white -fuzz 30% +opaque blue {tmp_png}"
     auxly.shell.silent(cmd)
 
-def process_image_yellow_mask(img, tmp_png):
+def process_pic_yellow_mask(pic, tmp_png):
     """Use this when all the notes use blue text on the rgb(255,255,185)
     yellowish background. Results in virtually no extra stuff."""
     # Creates black mask areas.
-    cmd = f"magick convert {img} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate {tmp_png}"
+    cmd = f"magick convert {pic} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate {tmp_png}"
     auxly.shell.call(cmd)
 
     # Shows only notes.
-    # cmd = f"magick convert {tmp_png} {img} -compose minus -composite {tmp_png}"  # NOTE: This sometimes resulted in the blue text incorrectly turning to black.
-    cmd = f"magick convert {img} {tmp_png} -negate -channel RBG -compose minus -composite {tmp_png}"
+    # cmd = f"magick convert {tmp_png} {pic} -compose minus -composite {tmp_png}"  # NOTE: This sometimes resulted in the blue text incorrectly turning to black.
+    cmd = f"magick convert {pic} {tmp_png} -negate -channel RBG -compose minus -composite {tmp_png}"
     auxly.shell.call(cmd)
 
     # Finds only blue.
@@ -40,14 +41,13 @@ def process_image_yellow_mask(img, tmp_png):
     auxly.shell.call(cmd)
 
 def process_notes_basic(text):
-    """Use this when there is little risk of extra stuff in the processed
-    image."""
+    """Use this when there is little risk of extra stuff in the processed pic."""
     lines = text.strip().splitlines()
     notes = " ".join(lines)
     return notes
 
 def process_notes_dict(text):
-    """Use this when there might be extra stuff in the processed image,
+    """Use this when there might be extra stuff in the processed pic,
     attempts to eliminate gibberish."""
     good_lines = []
     lines = text.strip().splitlines()
@@ -61,12 +61,11 @@ def process_notes_dict(text):
     notes = " ".join(good_lines)
     return notes
 
-def get_notes(img):
-    img = img
+def get_notes(pic):
     tmp = op.join(gettempdir(), randomize())
     tmp_png = tmp + ".png"
     tmp_txt = tmp + ".txt"
-    process_image_yellow_mask(img, tmp_png)
+    process_pic_yellow_mask(pic, tmp_png)
 
     # NOTE: Using tmp as output because ".txt" extension is added automatically
     # by Tesseract.
@@ -77,7 +76,7 @@ def get_notes(img):
         notes = process_notes_basic(text)
         return notes
 
-def create_picnotes(dirpath, confirm=True):
+def create_picnotes(dirpath, confirm=True, shrink=False):
     """Attempts to extract notes from all pics found under the given directory
     and write them to a file."""
     dirpath = op.abspath(dirpath)
@@ -108,14 +107,34 @@ def create_picnotes(dirpath, confirm=True):
         msg = f"({idx} of {len(pics)})"
         if relpath in existing_notes.keys() and auxly.filesys.checksum(picpath) == existing_notes[relpath]['md5']:
             qprompt.alert(f"{msg} Reusing `{picpath}`.")
+            notes = existing_notes[relpath]['note']
+            if shrink:
+                attempt_shrink(picpath, notes)
             line = existing_notes[relpath]['line']
             count['reused'] += 1
         else:
             notes = qprompt.status(f"{msg} Scanning `{picpath}`...", get_notes, [picpath]) or "NA"
+            if shrink:
+                attempt_shrink(picpath, notes)
             line = f"  - link:{relpath}[] [[md5_{auxly.filesys.checksum(picpath)}]] - {notes}"
             count['scanned'] += 1
         doc.appendline(line)
     return count
+
+def attempt_shrink(picpath, old_notes):
+    old_size = auxly.filesys.File(picpath).size()
+    tmppath = op.join(gettempdir(), "__temp-shrink.png")
+    cmd = f"pngquant --quality=60-75 --output {tmppath} {picpath}"
+    auxly.shell.call(cmd)
+    new_size = auxly.filesys.File(tmppath).size()
+    if new_size < old_size:
+        new_notes = get_notes(tmppath)
+        if new_notes == old_notes:
+            if auxly.filesys.move(tmppath, picpath):
+                qprompt.alert(f"Saved {old_size - new_size} bytes shrinking `{picpath}`.")
+                return
+    qprompt.alert(f"Could not shrink `{picpath}`.")
+    auxly.filesys.delete(tmppath)
 
 def parse_picnotes(doc):
     existing_notes = {}
@@ -136,38 +155,51 @@ def sort_pics(pics):
     sorted_pics = sorted(pics, key=lambda p: op.basename(p))
     return sorted_pics
 
+@click.group()
+def cli(**kwargs):
+    return True
+
+@cli.command()
+@click.option("--scandir", default=".", show_default=True, help="Directory to scan and create notes in.")
+@click.option("--picdirname", default="pics", show_default=True, help="Name of pic directories.")
+@click.option("--overwrite", is_flag=True, help="Always overwrite existing notes.")
+@click.option("--shrink", is_flag=True, help="Attempt to shrink pics.")
+def scan(scandir, picdirname, overwrite, shrink):
+    """Scan scandir and all subdirectories for pics. Note text will be
+    extracted and a notes file will be created under scandir."""
+    dirpath = auxly.filesys.Path(scandir)
+    if not dirpath.isdir():
+        qprompt.fatal("Given path must be existing directory!")
+    if picdirname != dirpath.name:
+        if not qprompt.ask_yesno("Directory not named `pics`, continue?"):
+            sys.exit()
+    create_picnotes(dirpath, confirm=not overwrite, shrink=shrink)
+
+@cli.command()
+@click.option("--startdir", default=".", show_default=True, help="The walk start directory.")
+@click.option("--picdirname", default="pics", show_default=True, help="Name of pic directories.")
+def walk(startdir, picdirname):
+    """Walk all directories under startdir and scan when directory name matches
+    picdirname. Existing notes are overwritten."""
+    if not op.isdir(startdir):
+        qprompt.fatal("Given path must be existing directory!")
+
+    total_count = {'reused': 0, 'scanned': 0}
+    for d in auxly.filesys.walkdirs(startdir, "pics"):
+        if op.basename(d) != picdirname:
+            continue
+        qprompt.hrule()
+        qprompt.alert(f"Walking through `{d}`...")
+        dirpath = auxly.filesys.Path(d)
+        new_count = create_picnotes(dirpath, False)
+        total_count['reused'] += new_count['reused']
+        total_count['scanned'] += new_count['scanned']
+    qprompt.alert(f"Walk complete, scanned={total_count['scanned']} reused={total_count['reused']}")
+    sys.exit()
+
 ##==============================================================#
 ## SECTION: Main Body                                           #
 ##==============================================================#
 
 if __name__ == '__main__':
-    arg1 = "."
-    try: arg1 = sys.argv[1].strip()
-    except: pass
-
-    if arg1 == "walk":
-        startdir = "."
-        try: startdir = sys.argv[2]
-        except: pass
-
-        if not op.isdir(startdir):
-            qprompt.fatal("Given path must be existing directory!")
-
-        total_count = {'reused': 0, 'scanned': 0}
-        for d in auxly.filesys.walkdirs(startdir, "pics$"):
-            qprompt.hrule()
-            qprompt.alert(f"Walking through `{d}`...")
-            dirpath = auxly.filesys.Path(d)
-            new_count = create_picnotes(dirpath, False)
-            total_count['reused'] += new_count['reused']
-            total_count['scanned'] += new_count['scanned']
-        qprompt.alert(f"Walk complete, scanned={total_count['scanned']} reused={total_count['reused']}")
-        sys.exit()
-
-    dirpath = auxly.filesys.Path(arg1)
-    if not dirpath.isdir():
-        qprompt.fatal("Given path must be existing directory!")
-    if "pics" != dirpath.name:
-        if not qprompt.ask_yesno("Directory not named `pics`, continue?"):
-            sys.exit()
-    create_picnotes(dirpath)
+    cli(obj={})
