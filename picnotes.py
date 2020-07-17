@@ -18,26 +18,26 @@ import click
 ## SECTION: Function Definitions                                #
 ##==============================================================#
 
-def process_pic_basic(pic, tmp_png):
+def process_pic_basic(picpath, tmppath):
     """Use this for basic blue text extraction. Results in some
     extra stuff depending on the pic."""
-    cmd = f"magick convert {pic} -resize 80% -fill white -fuzz 30% +opaque blue {tmp_png}"
+    cmd = f"magick convert {picpath} -resize 80% -fill white -fuzz 30% +opaque blue {tmppath}"
     auxly.shell.silent(cmd)
 
-def process_pic_yellow_mask(pic, tmp_png):
+def process_pic_yellow_mask(picpath, tmppath):
     """Use this when all the notes use blue text on the rgb(255,255,185)
     yellowish background. Results in virtually no extra stuff."""
     # Creates black mask areas.
-    cmd = f"magick convert {pic} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate {tmp_png}"
+    cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate {tmppath}"
     auxly.shell.call(cmd)
 
     # Shows only notes.
-    # cmd = f"magick convert {tmp_png} {pic} -compose minus -composite {tmp_png}"  # NOTE: This sometimes resulted in the blue text incorrectly turning to black.
-    cmd = f"magick convert {pic} {tmp_png} -negate -channel RBG -compose minus -composite {tmp_png}"
+    # cmd = f"magick convert {tmppath} {picpath} -compose minus -composite {tmppath}"  # NOTE: This sometimes resulted in the blue text incorrectly turning to black.
+    cmd = f"magick convert {picpath} {tmppath} -negate -channel RBG -compose minus -composite {tmppath}"
     auxly.shell.call(cmd)
 
     # Finds only blue.
-    cmd = f"magick convert {tmp_png} -fill white -fuzz 25% +opaque blue {tmp_png}"
+    cmd = f"magick convert {tmppath} -fill white -fuzz 25% +opaque blue {tmppath}"
     auxly.shell.call(cmd)
 
 def process_notes_basic(text):
@@ -61,17 +61,21 @@ def process_notes_dict(text):
     notes = " ".join(good_lines)
     return notes
 
-def get_notes(pic):
+def get_notes(picpath):
+    """Attempts to return note text from the given pic."""
     tmp = op.join(gettempdir(), randomize())
     tmp_png = tmp + ".png"
-    tmp_txt = tmp + ".txt"
-    process_pic_yellow_mask(pic, tmp_png)
+    process_pic_yellow_mask(picpath, tmp_png)
 
     # NOTE: Using tmp as output because ".txt" extension is added automatically
     # by Tesseract.
     auxly.shell.silent(f"tesseract {tmp_png} {tmp}")
 
+    tmp_txt = tmp + ".txt"
     text = auxly.filesys.File(tmp_txt).read()
+
+    auxly.filesys.delete(tmp_png)
+    auxly.filesys.delete(tmp_txt)
     if text:
         notes = process_notes_basic(text)
         return notes
