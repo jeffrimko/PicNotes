@@ -22,7 +22,7 @@ image:examples\pics\screenshot-20200717191204.png[width=400]
 Because this script makes so many use-case assumptions, there are no plans to version/release it like a normal project. Instead it is always recommended to use the latest repo version or create a fork and modify it to your needs.
 
 == Requirements
-This script was written with the Windows OS in mind although it should work on other operating systems. All dependencies should be listed in the main `_Check_Dependencies.bat` which is generated from `install\dependencies.popyaml`. Additionally, a Python requirements file is available at `install\requirements.txt`.
+This script was written with the Windows OS in mind although it should work on other operating systems. All dependencies should be listed in the main link:_Check_Dependencies.bat[] which is generated from link:install\dependencies.popyaml[]. Additionally, a Python requirements file is available at link:install\requirements.txt[].
 
 == Install
 The current recommended installation method on Windows is to create a file named `picnote.bat` in a directory that is on the PATH. Edit the file to include:

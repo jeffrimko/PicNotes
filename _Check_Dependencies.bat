@@ -14,7 +14,7 @@ set DEP_OK=1
 call:ChkDep^
     "Python"^
     "Python language interpreter."^
-    "www.python.org"^
+    "https://www.python.org"^
     "3.x"^
     python -V
 if %DEP_OK% equ 0 (
@@ -25,7 +25,7 @@ set DEP_OK=1
 call:ChkDep^
     "Pip"^
     "Python package manager."^
-    "www.python.org"^
+    "https://www.python.org"^
     "latest"^
     pip -V
 if %DEP_OK% equ 0 (
@@ -79,10 +79,10 @@ if %DEP_OK% equ 0 (
 set DEP_OK=1
 call:ChkDep^
     "pngquant"^
-    "Utility to compress PNG."^
-    "https://chocolatey.org/packages/tesseract"^
+    "Utility to compress PNG pics."^
+    "https://chocolatey.org/packages/pngquant"^
     "latest"^
-    tesseract --version
+    pngquant --version
 if %DEP_OK% equ 0 (
     set ALL_OK=0
     pause
