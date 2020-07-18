@@ -12,6 +12,12 @@ This script makes a lot of assumptions about the formatting and organization of 
 
 Many of these assumptions are because I use https://www.faststone.org/FSCaptureDetail.htm[FastStone Capture] to take screenshot notes.
 
+To summarize, this utility will OCR scan the text of notes written onto a picture like...
+
+image:examples\pics\screenshot-20200717191204.png[width=400]
+
+...and then write that text (in this case `This is a note that is part of the picture.`) to an AsciiDoc file named `pic_notes.adoc` (like link:examples\pics\pic_notes.adoc[]).
+
 == Status
 Because this script makes so many use-case assumptions, there are no plans to version/release it like a normal project. Instead it is always recommended to use the latest repo version or create a fork and modify it to your needs.
 
