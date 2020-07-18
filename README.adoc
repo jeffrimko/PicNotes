@@ -1,0 +1,29 @@
+= PicNotes
+
+== Introduction
+This project provides a Python 3.x script for extracting note text from screenshots or other pictures. The extracted text is written to an AsciiDoc file.
+
+This script makes a lot of assumptions about the formatting and organization of your pictures. These assumptions might not suit everyone but this script can still be used as a starting point. The assumptions are the following:
+
+  - Pictures are PNG format.
+  - Notes are added to the pictures using blue text (`RGB=0/0/255)`) on a yellow background (`RGB=255/255/185)`). For best results, use a bold serif font.
+  - Pictures are organized under a root folder named `pics`. Additional subfolders can be used to further organize pictures.
+  - Pictures are named something like `screenshot-20200717191204.png` or `screenshot-20200717191204-more_info_here.png`. The `20200717191204` portion is a timestamp.
+
+Many of these assumptions are because I use https://www.faststone.org/FSCaptureDetail.htm[FastStone Capture] to take screenshot notes.
+
+== Status
+Because this script makes so many use-case assumptions, there are no plans to version/release it like a normal project. Instead it is always recommended to use the latest repo version or create a fork and modify it to your needs.
+
+== Requirements
+This script was written with the Windows OS in mind although it should work on other operating systems. All dependencies should be listed in the main `_Check_Dependencies.bat` which is generated from `install\dependencies.popyaml`. Additionally, a Python requirements file is available at `install\requirements.txt`.
+
+== Install
+The current recommended installation method on Windows is to create a file named `picnote.bat` in a directory that is on the PATH. Edit the file to include:
+
+  @python <PATH_TO_PICNOTES_PY> %*
+
+It should now be possible to run `picnotes --help` from the command line.
+
+== Usage
+See `picnotes --help` for more information.

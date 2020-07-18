@@ -4,61 +4,39 @@
 
 from datetime import datetime
 from tempfile import gettempdir
-import os.path as op
 import os
+import os.path as op
 import sys
 
 from auxly.stringy import randomize, between
 import auxly
-import qprompt
-import enchant
 import click
+import qprompt
 
 ##==============================================================#
 ## SECTION: Function Definitions                                #
 ##==============================================================#
-
-def process_pic_basic(picpath, tmppath):
-    """Use this for basic blue text extraction. Results in some
-    extra stuff depending on the pic."""
-    cmd = f"magick convert {picpath} -resize 80% -fill white -fuzz 30% +opaque blue {tmppath}"
-    auxly.shell.silent(cmd)
 
 def process_pic_yellow_mask(picpath, tmppath):
     """Use this when all the notes use blue text on the rgb(255,255,185)
     yellowish background. Results in virtually no extra stuff."""
     # Creates black mask areas.
     cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate {tmppath}"
-    auxly.shell.call(cmd)
+    auxly.shell.silent(cmd)
 
     # Shows only notes.
     # cmd = f"magick convert {tmppath} {picpath} -compose minus -composite {tmppath}"  # NOTE: This sometimes resulted in the blue text incorrectly turning to black.
     cmd = f"magick convert {picpath} {tmppath} -negate -channel RBG -compose minus -composite {tmppath}"
-    auxly.shell.call(cmd)
+    auxly.shell.silent(cmd)
 
     # Finds only blue.
     cmd = f"magick convert {tmppath} -fill white -fuzz 25% +opaque blue {tmppath}"
-    auxly.shell.call(cmd)
+    auxly.shell.silent(cmd)
 
 def process_notes_basic(text):
     """Use this when there is little risk of extra stuff in the processed pic."""
     lines = text.strip().splitlines()
     notes = " ".join(lines)
-    return notes
-
-def process_notes_dict(text):
-    """Use this when there might be extra stuff in the processed pic,
-    attempts to eliminate gibberish."""
-    good_lines = []
-    lines = text.strip().splitlines()
-    d = enchant.Dict("en_US")
-    for line in lines:
-        if not line: continue
-        for word in line.split():
-            if d.check(word):
-                good_lines.append(line)
-                break
-    notes = " ".join(good_lines)
     return notes
 
 def get_notes(picpath):
@@ -113,7 +91,8 @@ def create_picnotes(dirpath, confirm=True, shrink=False):
             qprompt.alert(f"{msg} Reusing `{picpath}`.")
             notes = existing_notes[relpath]['note']
             if shrink:
-                attempt_shrink(picpath, notes)
+                if attempt_shrink(picpath, notes):
+                    existing_notes[relpath]['line'] = f"  - link:{relpath}[] [[md5_{auxly.filesys.checksum(picpath)}]] - {notes}"
             line = existing_notes[relpath]['line']
             count['reused'] += 1
         else:
@@ -129,16 +108,19 @@ def attempt_shrink(picpath, old_notes):
     old_size = auxly.filesys.File(picpath).size()
     tmppath = op.join(gettempdir(), "__temp-shrink.png")
     cmd = f"pngquant --quality=60-75 --output {tmppath} {picpath}"
-    auxly.shell.call(cmd)
+    auxly.shell.silent(cmd)
     new_size = auxly.filesys.File(tmppath).size()
+    if (not new_size) or (not old_size):
+        return False
     if new_size < old_size:
         new_notes = get_notes(tmppath)
         if new_notes == old_notes:
             if auxly.filesys.move(tmppath, picpath):
                 qprompt.alert(f"Saved {old_size - new_size} bytes shrinking `{picpath}`.")
-                return
+                return True
     qprompt.alert(f"Could not shrink `{picpath}`.")
     auxly.filesys.delete(tmppath)
+    return False
 
 def parse_picnotes(doc):
     existing_notes = {}
@@ -167,7 +149,7 @@ def cli(**kwargs):
 @click.option("--scandir", default=".", show_default=True, help="Directory to scan and create notes in.")
 @click.option("--picdirname", default="pics", show_default=True, help="Name of pic directories.")
 @click.option("--overwrite", is_flag=True, help="Always overwrite existing notes.")
-@click.option("--shrink", is_flag=True, help="Attempt to shrink pics.")
+@click.option("--shrink", is_flag=True, help="Attempt to shrink size of pics.")
 def scan(scandir, picdirname, overwrite, shrink):
     """Scan scandir and all subdirectories for pics. Note text will be
     extracted and a notes file will be created under scandir."""

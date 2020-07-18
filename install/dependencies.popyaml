@@ -1,0 +1,54 @@
+# This is a PopPage YAML file used to generate dependency/requirement files.
+
+__opt__:
+    command: make
+    inpath:
+      - https://github.com/jeffrimko/PopPageTemplates/blob/master/check_deps_batch/template.jinja2
+      - https://github.com/jeffrimko/PopPageTemplates/blob/master/python_req/template.jinja2
+    outpath:
+      - ..\_Check_Dependencies.bat
+      - requirements.txt
+
+deps:
+
+  - name: 'Python'
+    desc: 'Python language interpreter.'
+    ref: 'www.python.org'
+    ver: '3.x'
+    cmd: python -V
+
+  - name: 'Pip'
+    desc: 'Python package manager.'
+    ref: 'www.python.org'
+    ver: 'latest'
+    cmd: pip -V
+
+  - name: 'Qprompt'
+    desc: 'Python CLI prompt library.'
+    ref: 'https://pypi.org/project/qprompt/'
+    ver: 'latest'
+    cmd: python -c "import qprompt"
+
+  - name: 'Auxly'
+    desc: 'Python script helper library.'
+    ref: 'https://pypi.org/project/auxly/'
+    ver: 'latest'
+    cmd: python -c "import auxly"
+
+  - name: 'Click'
+    desc: 'Python CLI utility library.'
+    ref: 'https://pypi.org/project/click/'
+    ver: 'latest'
+    cmd: python -c "import click"
+
+  - name: 'Tesseract'
+    desc: 'OCR engine.'
+    ref: 'https://chocolatey.org/packages/tesseract'
+    ver: 'latest'
+    cmd: tesseract --version
+
+  - name: 'pngquant'
+    desc: 'Utility to compress PNG pics.'
+    ref: 'https://chocolatey.org/packages/pngquant'
+    ver: 'latest'
+    cmd: pngquant --version
