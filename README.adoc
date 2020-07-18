@@ -6,7 +6,7 @@ This project provides a Python 3.x script for extracting note text from screensh
 This script makes a lot of assumptions about the formatting and organization of your pictures. These assumptions might not suit everyone but this script can still be used as a starting point. The assumptions are the following:
 
   - Pictures are PNG format.
-  - Notes are added to the pictures using blue text (`RGB=0/0/255)`) on a yellow background (`RGB=255/255/185)`). For best results, use a bold serif font.
+  - Notes are added to the pictures using blue text (`RGB=0/0/255`) on a yellow background (`RGB=255/255/185`). For best results, use a bold serif font.
   - Pictures are organized under a root folder named `pics`. Additional subfolders can be used to further organize pictures.
   - Pictures are named something like `screenshot-20200717191204.png` or `screenshot-20200717191204-more_info_here.png`. The `20200717191204` portion is a timestamp.
 
