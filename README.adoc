@@ -1,7 +1,7 @@
 = PicNotes
 
 == Introduction
-This project provides a Python 3.x script for extracting note text from screenshots or other pictures via the https://github.com/tesseract-ocr/[Tesseract OCR engine]. The extracted text is written to an AsciiDoc file.
+This project provides a Python 3.x script for extracting note text from screenshots or other pictures via the https://github.com/tesseract-ocr/[Tesseract OCR engine]. The extracted text is written to an AsciiDoc file which makes it easy to search using utilities such as grep.
 
 This script makes a lot of assumptions about the formatting and organization of your pictures. These assumptions might not suit everyone but this script can still be used as a starting point. The assumptions are the following:
 
