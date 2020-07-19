@@ -67,6 +67,17 @@ if %DEP_OK% equ 0 (
 )
 set DEP_OK=1
 call:ChkDep^
+    "ImageMagick"^
+    "Image manipulation utility."^
+    "https://chocolatey.org/packages/imagemagick"^
+    "latest"^
+    magick --version
+if %DEP_OK% equ 0 (
+    set ALL_OK=0
+    pause
+)
+set DEP_OK=1
+call:ChkDep^
     "Tesseract"^
     "OCR engine."^
     "https://chocolatey.org/packages/tesseract"^

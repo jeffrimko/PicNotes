@@ -41,6 +41,12 @@ deps:
     ver: 'latest'
     cmd: python -c "import click"
 
+  - name: 'ImageMagick'
+    desc: 'Image manipulation utility.'
+    ref: 'https://chocolatey.org/packages/imagemagick'
+    ver: 'latest'
+    cmd: magick --version
+
   - name: 'Tesseract'
     desc: 'OCR engine.'
     ref: 'https://chocolatey.org/packages/tesseract'
