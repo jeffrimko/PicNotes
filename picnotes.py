@@ -80,6 +80,7 @@ def create_picnotes(dirpath, confirm=True, shrink=False):
     qprompt.alert(f"Initialized file `{doc.path}`")
     doc.appendline(f"= PIC NOTES: `{titlepath}`")
     doc.appendline(":date: " + datetime.now().strftime("%d %B %Y %I:%M%p"))
+    doc.appendline(":toc:")
     doc.appendline("")
     doc.appendline("NOTE: Entries sorted by base filename.")
     doc.appendline("")
@@ -91,33 +92,39 @@ def create_picnotes(dirpath, confirm=True, shrink=False):
             qprompt.alert(f"{msg} Reusing `{picpath}`.")
             notes = existing_notes[relpath]['note']
             if shrink:
-                if attempt_shrink(picpath, notes):
-                    existing_notes[relpath]['line'] = f"  - link:{relpath}[] [[md5_{auxly.filesys.checksum(picpath)}]] - {notes}"
-            line = existing_notes[relpath]['line']
+                attempt_shrink(picpath, notes)
+            line = format_adoc_line(relpath, picpath, notes)
             count['reused'] += 1
         else:
             notes = qprompt.status(f"{msg} Scanning `{picpath}`...", get_notes, [picpath]) or "NA"
             if shrink:
                 attempt_shrink(picpath, notes)
-            line = f"  - link:{relpath}[] [[md5_{auxly.filesys.checksum(picpath)}]] - {notes}"
+            line = format_adoc_line(relpath, picpath, notes)
             count['scanned'] += 1
         doc.appendline(line)
     return count
 
+def format_adoc_line(relpath, picpath, notes):
+    line = ""
+    line += f"== {relpath}\n"
+    line += f"  - link:{relpath}[window='_blank']  [[md5_{auxly.filesys.checksum(picpath)}]] - {notes}\n"
+    line += f"+\n"
+    line += f"link:{relpath}[ image:{relpath}[width=50%] , window='_blank']\n"
+    return line
+
 def attempt_shrink(picpath, old_notes):
     old_size = auxly.filesys.File(picpath).size()
     tmppath = op.join(gettempdir(), "__temp-shrink.png")
-    cmd = f"pngquant --quality=60-75 --output {tmppath} {picpath}"
+    cmd = f"pngquant --quality=40-60 --output {tmppath} {picpath}"
     auxly.shell.silent(cmd)
     new_size = auxly.filesys.File(tmppath).size()
-    if (not new_size) or (not old_size):
-        return False
-    if new_size < old_size:
-        new_notes = get_notes(tmppath)
-        if new_notes == old_notes:
-            if auxly.filesys.move(tmppath, picpath):
-                qprompt.alert(f"Saved {old_size - new_size} bytes shrinking `{picpath}`.")
-                return True
+    if new_size and old_size:
+        if new_size < old_size:
+            new_notes = get_notes(tmppath) or "NA"
+            if new_notes == old_notes:
+                if auxly.filesys.move(tmppath, picpath):
+                    qprompt.alert(f"Saved {old_size - new_size} bytes shrinking `{picpath}`.")
+                    return True
     qprompt.alert(f"Could not shrink `{picpath}`.")
     auxly.filesys.delete(tmppath)
     return False
@@ -128,7 +135,7 @@ def parse_picnotes(doc):
         if line.lstrip().startswith("- link:"):
             try:
                 entry = {}
-                entry['file'] = between(line, "link:", "[]")
+                entry['file'] = between(line, " - link:", "[")
                 entry['md5'] = between(line, "[[md5_", "]]")
                 entry['note'] = line.split("]] - ")[1]
                 entry['line'] = line
@@ -178,8 +185,9 @@ def walk(startdir, picdirname):
         qprompt.alert(f"Walking through `{d}`...")
         dirpath = auxly.filesys.Path(d)
         new_count = create_picnotes(dirpath, False)
-        total_count['reused'] += new_count['reused']
-        total_count['scanned'] += new_count['scanned']
+        if new_count:
+            total_count['reused'] += new_count['reused']
+            total_count['scanned'] += new_count['scanned']
     qprompt.alert(f"Walk complete, scanned={total_count['scanned']} reused={total_count['reused']}")
     sys.exit()
 
