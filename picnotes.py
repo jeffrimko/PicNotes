@@ -109,7 +109,7 @@ def format_adoc_line(relpath, picpath, notes):
     line += f"== {relpath}\n"
     line += f"  - link:{relpath}[window='_blank']  [[md5_{auxly.filesys.checksum(picpath)}]] - {notes}\n"
     line += f"+\n"
-    line += f"link:{relpath}[ image:{relpath}[width=50%] , window='_blank']\n"
+    line += f"link:{relpath}[ image:{relpath}[width=35%] , window='_blank']\n"
     return line
 
 def attempt_shrink(picpath, old_notes):
