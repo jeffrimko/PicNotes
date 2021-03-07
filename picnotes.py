@@ -21,7 +21,7 @@ def process_pic_yellow_mask(picpath, tmppath):
     """Use this when all the notes use blue text on the rgb(255,255,185)
     yellowish background. Results in virtually no extra stuff."""
     # Creates black mask areas.
-    cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate {tmppath}"
+    cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate -morphology open octagon:12 {tmppath}"
     auxly.shell.silent(cmd)
 
     # Shows only notes.
