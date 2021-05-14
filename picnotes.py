@@ -28,21 +28,21 @@ def process_pic_yellow_mask(picpath, cleanup=True):
     cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -monochrome -morphology open octagon:12 -negate {maskpath}"
     auxly.shell.silent(cmd)
 
-    # Shows only notes.
+    # Mask out only notes.
     notepath = op.join(gettempdir(), f"{unique}-note.png")
     cmd = f"magick convert {picpath} {maskpath} -compose minus -composite {notepath}"
     auxly.shell.silent(cmd)
 
-    # Finds only blue.
-    bluepath = op.join(gettempdir(), f"{unique}-blue.png")
-    cmd = f"magick convert {notepath} +opaque yellow -fill white -monochrome {bluepath}"
+    # Finds only text.
+    textpath = op.join(gettempdir(), f"{unique}-text.png")
+    cmd = f"magick convert {notepath} +opaque yellow -fill white -monochrome {textpath}"
     auxly.shell.silent(cmd)
 
     if cleanup:
         auxly.filesys.delete(maskpath)
         auxly.filesys.delete(notepath)
 
-    return bluepath
+    return textpath
 
 def format_notes_basic(text):
     """Use this when there is little risk of extra stuff in the processed pic."""
