@@ -17,45 +17,68 @@ import qprompt
 ## SECTION: Function Definitions                                #
 ##==============================================================#
 
-def process_pic_yellow_mask(picpath, tmppath):
+def process_pic_yellow_mask(picpath, cleanup=True):
     """Use this when all the notes use blue text on the rgb(255,255,185)
-    yellowish background. Results in virtually no extra stuff."""
+    yellowish background. Results in virtually no extra stuff. Returns the path
+    to the processed pic."""
+    unique = randomize()
+
+    # # Creates black mask areas.
+    # testpath = op.join(gettempdir(), f"{unique}-test.png")
+    # cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -monochrome -morphology open octagon:12 -negate {testpath}"
+    # auxly.shell.silent(cmd)
+
     # Creates black mask areas.
-    cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate -morphology open octagon:12 {tmppath}"
+    maskpath = op.join(gettempdir(), f"{unique}-mask.png")
+    # cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate -morphology open octagon:12 {maskpath}"
+    cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -monochrome -morphology open octagon:12 -negate {maskpath}"
     auxly.shell.silent(cmd)
 
     # Shows only notes.
-    # cmd = f"magick convert {tmppath} {picpath} -compose minus -composite {tmppath}"  # NOTE: This sometimes resulted in the blue text incorrectly turning to black.
-    cmd = f"magick convert {picpath} {tmppath} -negate -channel RBG -compose minus -composite {tmppath}"
+    notepath = op.join(gettempdir(), f"{unique}-note.png")
+    # cmd = f"magick convert {maskpath} {picpath} -compose minus -composite {notepath}"  # NOTE: This sometimes resulted in the blue text incorrectly turning to black.
+    # cmd = f"magick convert {picpath} {maskpath} -negate -channel RBG -compose minus -composite {notepath}"
+    cmd = f"magick convert {picpath} {maskpath} -compose minus -composite {notepath}"
     auxly.shell.silent(cmd)
 
     # Finds only blue.
-    cmd = f"magick convert {tmppath} -fill white -fuzz 25% +opaque blue {tmppath}"
+    bluepath = op.join(gettempdir(), f"{unique}-blue.png")
+    # cmd = f"magick convert {notepath} -fill white -fuzz 25% +opaque blue {bluepath}"
+    cmd = f"magick convert {notepath} +opaque yellow -fill white -monochrome {bluepath}"
     auxly.shell.silent(cmd)
 
-def process_notes_basic(text):
+    if cleanup:
+        auxly.filesys.delete(maskpath)
+        auxly.filesys.delete(notepath)
+
+    return bluepath
+
+def format_notes_basic(text):
     """Use this when there is little risk of extra stuff in the processed pic."""
     lines = text.strip().splitlines()
     notes = " ".join(lines)
     return notes
 
-def get_notes(picpath):
+def extract_notes(pngpath):
+    """Extracts notes from a pre-processed PNG file. Returns a text file
+    containing the extracted note text."""
+    unique = randomize()
+    # NOTE: The ".txt" extension is added automatically by Tesseract.
+    txt_noext = op.join(gettempdir(), f"{unique}-note")
+    auxly.shell.silent(f"tesseract {pngpath} {txt_noext}")
+    return txt_noext + ".txt"
+
+def scan_notes(picpath, cleanup=True):
     """Attempts to return note text from the given pic."""
-    tmp = op.join(gettempdir(), randomize())
-    tmp_png = tmp + ".png"
-    process_pic_yellow_mask(picpath, tmp_png)
+    pngpath = process_pic_yellow_mask(picpath)
+    txtpath = extract_notes(pngpath)
+    text = auxly.filesys.File(txtpath).read()
 
-    # NOTE: Using tmp as output because ".txt" extension is added automatically
-    # by Tesseract.
-    auxly.shell.silent(f"tesseract {tmp_png} {tmp}")
-
-    tmp_txt = tmp + ".txt"
-    text = auxly.filesys.File(tmp_txt).read()
-
-    auxly.filesys.delete(tmp_png)
-    auxly.filesys.delete(tmp_txt)
+    if cleanup:
+        auxly.filesys.delete(pngpath)
+        auxly.filesys.delete(txtpath)
     if text:
-        notes = process_notes_basic(text)
+        notes = format_notes_basic(text)
         return notes
 
 def create_picnotes(dirpath, confirm=True, shrink=False):
@@ -96,7 +119,7 @@ def create_picnotes(dirpath, confirm=True, shrink=False):
             line = format_adoc_line(relpath, picpath, notes)
             count['reused'] += 1
         else:
-            notes = qprompt.status(f"{msg} Scanning `{picpath}`...", get_notes, [picpath]) or "NA"
+            notes = qprompt.status(f"{msg} Scanning `{picpath}`...", scan_notes, [picpath]) or "NA"
             if shrink:
                 attempt_shrink(picpath, notes)
             line = format_adoc_line(relpath, picpath, notes)
@@ -120,7 +143,7 @@ def attempt_shrink(picpath, old_notes):
     new_size = auxly.filesys.File(tmppath).size()
     if new_size and old_size:
         if new_size < old_size:
-            new_notes = get_notes(tmppath) or "NA"
+            new_notes = scan_notes(tmppath) or "NA"
             if new_notes == old_notes:
                 if auxly.filesys.move(tmppath, picpath):
                     qprompt.alert(f"Saved {old_size - new_size} bytes shrinking `{picpath}`.")
