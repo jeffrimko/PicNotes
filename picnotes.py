@@ -23,27 +23,18 @@ def process_pic_yellow_mask(picpath, cleanup=True):
     to the processed pic."""
     unique = randomize()
 
-    # # Creates black mask areas.
-    # testpath = op.join(gettempdir(), f"{unique}-test.png")
-    # cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -monochrome -morphology open octagon:12 -negate {testpath}"
-    # auxly.shell.silent(cmd)
-
     # Creates black mask areas.
     maskpath = op.join(gettempdir(), f"{unique}-mask.png")
-    # cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -negate -threshold 0 -negate -morphology open octagon:12 {maskpath}"
     cmd = f"magick convert {picpath} -fill white +opaque rgb(255,255,185) -blur 10 -monochrome -morphology open octagon:12 -negate {maskpath}"
     auxly.shell.silent(cmd)
 
     # Shows only notes.
     notepath = op.join(gettempdir(), f"{unique}-note.png")
-    # cmd = f"magick convert {maskpath} {picpath} -compose minus -composite {notepath}"  # NOTE: This sometimes resulted in the blue text incorrectly turning to black.
-    # cmd = f"magick convert {picpath} {maskpath} -negate -channel RBG -compose minus -composite {notepath}"
     cmd = f"magick convert {picpath} {maskpath} -compose minus -composite {notepath}"
     auxly.shell.silent(cmd)
 
     # Finds only blue.
     bluepath = op.join(gettempdir(), f"{unique}-blue.png")
-    # cmd = f"magick convert {notepath} -fill white -fuzz 25% +opaque blue {bluepath}"
     cmd = f"magick convert {notepath} +opaque yellow -fill white -monochrome {bluepath}"
     auxly.shell.silent(cmd)
 
@@ -60,8 +51,8 @@ def format_notes_basic(text):
     return notes
 
 def extract_notes(pngpath):
-    """Extracts notes from a pre-processed PNG file. Returns a text file
-    containing the extracted note text."""
+    """Extracts notes from a pre-processed PNG file. Returns the path of a
+    text file containing the extracted note text."""
     unique = randomize()
     # NOTE: The ".txt" extension is added automatically by Tesseract.
     txt_noext = op.join(gettempdir(), f"{unique}-note")
