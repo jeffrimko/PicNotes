@@ -137,7 +137,9 @@ def attempt_shrink(picpath, old_notes):
             new_notes = scan_notes(tmppath) or "NA"
             if new_notes == old_notes:
                 if auxly.filesys.move(tmppath, picpath):
-                    qprompt.alert(f"Saved {old_size - new_size} bytes shrinking `{picpath}`.")
+                    bytes_saved = old_size - new_size
+                    kbytes_saved = bytes_saved / 1024
+                    qprompt.alert(f"Saved {kbytes_saved:.1f} kilobytes shrinking `{picpath}`.")
                     return True
     qprompt.alert(f"Could not shrink `{picpath}`.")
     auxly.filesys.delete(tmppath)
@@ -180,7 +182,14 @@ def scan(scandir, picdirname, overwrite, shrink):
     if picdirname != dirpath.name:
         if not qprompt.ask_yesno("Directory not named `pics`, continue?"):
             sys.exit()
+    size_before = 0
+    if shrink:
+        size_before = auxly.filesys.getsize(dirpath, recurse=True)
     create_picnotes(dirpath, confirm=not overwrite, shrink=shrink)
+    if shrink:
+        size_after = auxly.filesys.getsize(dirpath, recurse=True)
+        kbytes_saved = (size_before - size_after) / 1024
+        qprompt.alert(f"Saved a total of {kbytes_saved:.1f} kilobytes shrinking `{dirpath}`.")
 
 @cli.command()
 @click.option("--startdir", default=".", show_default=True, help="The walk start directory.")
@@ -192,7 +201,7 @@ def walk(startdir, picdirname):
         qprompt.fatal("Given path must be existing directory!")
 
     total_count = {'reused': 0, 'scanned': 0}
-    for d in auxly.filesys.walkdirs(startdir, "pics"):
+    for d in auxly.filesys.walkdirs(startdir, "pics", recurse=True):
         if op.basename(d) != picdirname:
             continue
         qprompt.hrule()
