@@ -1,5 +1,5 @@
 = PIC NOTES: `examples\pics`
-:date: 14 November 2020 07:53PM
+:date: 13 May 2021 11:34PM
 :toc:
 
 NOTE: Entries sorted by base filename.
@@ -10,7 +10,7 @@ NOTE: Entries sorted by base filename.
 link:screenshot-20200717191204.png[ image:screenshot-20200717191204.png[width=35%] , window='_blank']
 
 == screenshot-20200717191313.png
-  - link:screenshot-20200717191313.png[window='_blank']  [[md5_60b235aa43302337b629dec959dd8319]] - NA
+  - link:screenshot-20200717191313.png[window='_blank']  [[md5_60b235aa43302337b629dec959dd8319]] - Here's an example of a picture with caption notes.
 +
 link:screenshot-20200717191313.png[ image:screenshot-20200717191313.png[width=35%] , window='_blank']
 
