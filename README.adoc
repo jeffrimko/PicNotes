@@ -3,7 +3,7 @@
 == Introduction
 This project provides a Python 3.x script for scanning note text from screenshots or other pictures via the https://github.com/tesseract-ocr/[Tesseract OCR engine]. The scanned text is written to an AsciiDoc file which makes it easy to search using utilities such as grep.
 
-This script makes a lot of assumptions about the formatting and organization of your pictures. These assumptions might not suit everyone but this script can still be used as a starting point. The assumptions are the following:
+This project makes many assumptions about the formatting and organization of your pictures. These assumptions might not suit everyone but this project can still be used as a starting point. The assumptions are the following:
 
   - Pictures are PNG format.
   - Notes are added to the pictures using blue text (`RGB=0/0/255`) on a yellow background (`RGB=255/255/185`). For best results, use a bold serif font.
@@ -19,13 +19,13 @@ image:examples\pics\screenshot-20200717191204.png[width=400]
 ...and then write that text (in this case `This is a note that is part of the picture.`) to an AsciiDoc file named `pic_notes.adoc` (like link:examples\pics\pic_notes.adoc[]).
 
 == Status
-Because this script makes so many use-case assumptions, there are no plans to version/release it like a normal project. Instead it is always recommended to use the latest repo version or create a fork and modify it to your needs.
+Because this project makes many use-case assumptions, there are no plans to formally version it. Instead it is always recommended to use the latest repo version or create a fork and modify it to your needs.
 
 == Requirements
-This script was written with the Windows OS in mind although it should work on other operating systems. All dependencies should be listed in the main link:_Check_Dependencies.bat[] which is generated from link:install\dependencies.popyaml[]. Additionally, a Python requirements file is available at link:install\requirements.txt[].
+This project was primarily developed for Windows although it may work on other operating systems. Run the link:_Check_Dependencies.bat[] script to check if the required dependencies are met; this script was generated from link:install/dependencies.popyaml[]. Additionally, a Python requirements file is available at link:install/requirements.txt[].
 
-== Install
-This script is intended to be used as a command line utility. The current recommended installation method on Windows is to create a file named `picnotes.bat` in a directory that is on the PATH. Edit the file to include:
+== Installation
+This project is intended to be used as a command line utility. The current recommended installation method on Windows is to create a file named `picnotes.bat` in a directory that is on the PATH. Edit the file to include:
 
   @python <PATH_TO_PICNOTES_PY> %*
 
